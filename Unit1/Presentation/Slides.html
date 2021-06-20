@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Unit 1 Independent Analysis</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Jennifer Houchins" />
+    <meta name="date" content="2021-06-20" />
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.6/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.6/panelset.js"></script>
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"<i class=\"fa fa-clipboard\"><\/i>","success":"<i class=\"fa fa-check\" style=\"color: #90BE6D\"><\/i>","error":"Press Ctrl+C to Copy"})</script>
+    <link href="libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+    <link href="libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+    <link href="libs/tile-view-0.2.6/tile-view.css" rel="stylesheet" />
+    <script src="libs/tile-view-0.2.6/tile-view.js"></script>
+    <link rel="stylesheet" href="css/wolfpack.css" type="text/css" />
+    <link rel="stylesheet" href="css/wolfpack-fonts.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: clear, title-slide, inverse, center, top, middle
+
+
+
+
+
+
+
+
+
+
+
+# Unit 1 Independent Analysis
+----
+### **Jennifer Houchins**
+### North Carolina State University
+### June 20, 2021
+
+---
+# Context
+
+For my independent analysis this week, I am examining the networks that emerged 
+in the second offering of the Digital Learning Transition in K-12 Schools MOOC-Ed 
+(designated DLT2; offered in September 2013).
+&lt;br /&gt;&lt;br /&gt;
+The .red[**data sources**] available from the [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/ZZH3UB) are:
+- **MOOC-Ed registration form.** (Our actors contained in dlt2_nodes.csv)
+- **MOOC-Ed discussion forums.** (Our ties contained in dlt2_edgelist.)
+&lt;br /&gt;&lt;br /&gt;
+.font50[Kellogg, S., Booth, S., &amp; Oliver, K. (2014). [A social network
+perspective on peer supported learning in MOOCs for
+educators](https://github.com/sbkellogg/eci-589/blob/main/unit-1/lit/sna_mooc_irrodl_bjet_articles.pdf). *International
+Review of Research in Open and Distributed Learning*, *15*(5), 263-289.]
+---
+# Guiding Question
+.font90[
+The question framing this independent analysis are:
+- What are the patterns of interaction and structure of peer networks that emerge in the DLT2 MOOC-Ed for actors with the most ties?
+  - This uses the same methods we applied in the Guided Walkthrough which examined the first section of the MOOC-Ed (DLT1).
+  - I also employed the methods described by Katherine Ognyanova's tutorial [Network Analysis and Visualization with R and igraph](https://kateto.net/netscix2016.html) 
+- Specifically, in addition to examining the sub-network of actors with the most ties, I also looked out 
+  - Hubs and Authorities
+  - Clusters and communities
+]
+---
+class: no-logo
+
+# Methods
+This independent analysis uses the following packages in R.
+
+
+```r
+*library(tidyverse)
+*library(igraph)
+library(here)
+```
+
+
+Of course, I'm using both `tidyverse` and `igraph` like the guided walkthrough. And 
+as you'll see on the next slide, the `here` package helps with project pathways. 
+If you haven't heard about it, you may want to check it out.
+
+---
+class: no-logo
+# Methods (continued)
+
+As mentioned in the context, the ties of this network are in the `dlt2_edgelist.csv` file.
+
+.code60[
+
+```r
+ties &lt;- read_csv(here("Presentation", "data","dlt2_edgelist.csv"), 
+                 col_types = cols(Sender = col_character(), 
+                                  Receiver = col_character(), 
+                                  Category = col_skip(), 
+                                  CommentID = col_character(), 
+                                  DiscussionID = col_character()))
+
+*engaged &lt;- ties %&gt;%
+* count(Sender, Receiver) %&gt;%
+* filter(n &gt;= 6)
+```
+]
+
+To find the actors with most ties, I'm counting the ties between sender and 
+receiver pairs and filtering for those that have 6 or more ties.
+
+---
+# Methods (continued)
+
+The actors of this network are in the `dlt2_nodes.csv` file. I'm filtering for those 
+actors that appear in my `engaged` list with the most ties.
+
+
+```r
+actors &lt;- read_csv(here("Presentation", "data", "dlt2_nodes.csv"), 
+                   col_types = cols(uid = col_character(), 
+                                    facilitator = col_integer(), 
+                                    expert = col_character(), 
+                                    connect = col_character())) %&gt;% 
+* filter(uid %in% engaged$Sender | uid %in% engaged$Receiver)
+```
+
+---
+class: no-logo
+
+# Creating the Network
+
+To create the network, I simply supplied my `engaged` list of ties to the `graph_from_data_frame` function.
+.code70[
+
+```r
+*network &lt;- graph_from_data_frame(d = engaged,
+                                 vertices = actors, 
+                                 directed = T) 
+network
+```
+
+```
+## IGRAPH 7637f05 DN-- 16 16 -- 
+## + attr: name (v/c), facilitator (v/n), role (v/c), experience2 (v/n),
+## | experience (v/n), grades (v/c), location (v/c), region (v/c), country
+## | (v/c), group (v/c), gender (v/c), expert (v/c), connect (v/c), n
+## | (e/n)
+## + edges from 7637f05 (vertex names):
+##  [1] 125-&gt;302 158-&gt;302 183-&gt;302 197-&gt;302 223-&gt;302 23 -&gt;158 233-&gt;302 241-&gt;302
+##  [9] 246-&gt;302 266-&gt;302 288-&gt;302 302-&gt;302 310-&gt;302 436-&gt;302 437-&gt;302 98 -&gt;302
+```
+]
+
+---
+class: no-logo
+# Simplified Network
+
+That resulted in a directed network with .red[16 nodes] and .red[16 edges] that's already 
+looking interesting. Simplifying the network to remove loops reveals that there was only 
+one loop since only one edge is removed.
+
+.code70[
+
+```r
+simple_network &lt;- simplify(network, remove.loops = TRUE) 
+simple_network
+```
+
+```
+## IGRAPH 9176c6b DN-- 16 15 -- 
+## + attr: name (v/c), facilitator (v/n), role (v/c), experience2 (v/n),
+## | experience (v/n), grades (v/c), location (v/c), region (v/c), country
+## | (v/c), group (v/c), gender (v/c), expert (v/c), connect (v/c)
+## + edges from 9176c6b (vertex names):
+##  [1] 23 -&gt;158 98 -&gt;302 125-&gt;302 158-&gt;302 183-&gt;302 197-&gt;302 223-&gt;302 233-&gt;302
+##  [9] 241-&gt;302 246-&gt;302 266-&gt;302 288-&gt;302 310-&gt;302 436-&gt;302 437-&gt;302
+```
+]
+
+---
+class: clear, inverse, middle
+
+Next I calculated edge weights and created a simplified weighted network that I could explore...
+
+
+
+
+
+
+
+---
+class: no-logo
+
+# Exploring the Network - Node Degree
+
+.pull-left[
+![](Slides_files/figure-html/node-degree-1.png)&lt;!-- --&gt;
+]
+
+.pull-right[
+&lt;br /&gt;
+
+```r
+mean(node_degree)
+```
+
+```
+## [1] 1.875
+```
+
+```r
+median(node_degree)
+```
+
+```
+## [1] 1
+```
+]
+
+???
+You might not be surprised that a network with 16 nodes and 16 edges has a median node degree of 1.
+---
+class: no-logo
+# Exploring the Network - In Degree
+.pull-left[
+![](Slides_files/figure-html/unnamed-chunk-1-1.png)&lt;!-- --&gt;
+]
+
+.pull-right[
+&lt;br /&gt;
+
+```r
+mean(in_degree)
+```
+
+```
+## [1] 0.9375
+```
+
+```r
+median(in_degree)
+```
+
+```
+## [1] 0
+```
+]
+
+??? 
+
+The in degree is a bit different with a median of 0. You'll see why this is when we visualize this sub-network.
+
+---
+class: no-logo
+# Exploring the Network - Out Degree
+
+.pull-left[
+![](Slides_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+]
+
+.pull-right[
+&lt;br /&gt;
+
+```r
+mean(out_degree)
+```
+
+```
+## [1] 0.9375
+```
+
+```r
+median(out_degree)
+```
+
+```
+## [1] 1
+```
+]
+
+???
+
+The out degree is looks a bit more like the node degree results. This suggests 
+that most nodes in this sub-network are folks responding to a discussion post, 
+but not receiving a response themselves.
+
+The one difference is the mean. While the mean was closer to 2 for node degree, 
+here it is much closer to the median. This suggests that overall there is a node 
+(or nodes) with higher overall node degree. Let's check that out by visualizing 
+the network.
+
+---
+class: no-logo
+# Visualizing The Network
+.pull-left[
+In this network, the vertices (or nodes) are colored by whether or not the actor is a MOOC-Ed course facilitator. 
+
+The two .red[**red nodes**] are .red[**facilitators**] and the .blue[**blue nodes**] are .blue[**course participants**].
+]
+
+.pull-right[
+![](Slides_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+]
+---
+class: no-logo
+# Hubs and Authorities
+.font70[According to the Ognyanova's tutorial (Section 6.8), hubs are identified with 
+large numbers of outgoing links and authorities are identified with large numbers of incoming links.]
+
+
+.pull-left[
+![](Slides_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+]
+
+.pull-right[
+![](Slides_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+]
+---
+class: no-logo
+# Clusters
+
+It may seem obvious since this sub-network is so simple, but let's identify the communities within it anyway.
+
+&lt;img src="Slides_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" /&gt;
+---
+
+class: clear, inverse
+
+.center[Some observations...]
+
+----
+
+- This analysis seems to have identified that the most activity in the network 
+is from participants responding to the facilitator. Perhaps to the discussion forum prompts? 
+
+--
+
+- Course facilitator 302 is likely the lead course instructor since analysis revealed them as the 
+"authority"
+
+--
+
+- Interestingly, it looks the course participants didn't engage with one another very often.
+
+---
+class: clear, middle, inverse
+
+.center[
+**Thank you!**
+
+.font90[If you'd like to learn more about the techniques used in this
+presentation you can get the R project from my
+Github repo:&lt;br /&gt;
+&lt;https://github.com/jennhouchins/ECI589-SNA&gt;]
+
+
+.pull-left-narrow[.center[
+&lt;img style="border-radius: 50%;" src="img/jenn.jpg" width="200px"/&gt;]]
+.pull-right-wide[
+&lt;br /&gt;
+.font90[
+**Follow me on Twitter:** [@TooSweetGeek](https://twitter.com/TooSweetGeek) &lt;br /&gt;
+**Email me:** [jennifer.houchins@ncsu.edu](mailto:jennifer.houchins@ncsu.edu) 
+]
+]]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "default",
+"highlightLines": true,
+"highlightLanguage": "r",
+"countIncrementalSlides": false,
+"ratio": "16:9",
+"slideNumberFormat": "<div class=\"progress-bar-container\">\n <div class=\"progress-bar\" style=\"width: calc(%current% / %total% * 100%);\">\n </div>\n</div>"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
