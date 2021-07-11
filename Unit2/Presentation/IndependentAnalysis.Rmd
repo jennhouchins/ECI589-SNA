@@ -1,0 +1,457 @@
+---
+  title: "CSforAll Education Communities on Twitter"
+  subtitle: "Unit 2 Independent Analysis"
+  author: "**Jennifer Houchins**"
+  institute: "North Carolina State University"
+  date: '`r format(Sys.time(), "%B %d, %Y")`'
+  output:
+    xaringan::moon_reader:
+      css:
+       - default
+       - css/wolfpack.css
+       - css/wolfpack-fonts.css
+      lib_dir: libs                        # creates directory for libraries
+      seal: false                          # false: custom title slide
+      nature:
+        highlightStyle: default         # highlighting syntax for code
+        highlightLines: true               # true: enables code line highlighting 
+        highlightLanguage: ["r"]           # languages to highlight
+        countIncrementalSlides: false      # false: disables counting of incremental slides
+        ratio: "16:9"                      # 4:3 for standard size,16:9
+        slideNumberFormat: |
+         <div class="progress-bar-container">
+          <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
+          </div>
+         </div>
+---
+class: clear, title-slide, inverse, center, top, middle
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r load-initial-packages, echo=FALSE}
+# then load all the relevant packages
+pacman::p_load(pacman, knitr, tidyverse, tidytext, igraph, rtweet,
+               tidygraph, ggraph, vader, webshot, here, flipbookr)
+```
+
+```{r xaringan-panelset, echo=FALSE}
+xaringanExtra::use_panelset()
+```
+
+```{r xaringanExtra-clipboard, echo=FALSE}
+# these allow any code snippets to be copied to the clipboard so they 
+# can be pasted easily
+htmltools::tagList(
+  xaringanExtra::use_clipboard(
+    button_text = "<i class=\"fa fa-clipboard\"></i>",
+    success_text = "<i class=\"fa fa-check\" style=\"color: #90BE6D\"></i>",
+  ),
+  rmarkdown::html_dependency_font_awesome()
+)
+```
+
+```{r xaringan-extras, echo=FALSE}
+xaringanExtra::use_tile_view()
+```
+
+# `r rmarkdown::metadata$title` 
+----
+### `r rmarkdown::metadata$author`
+### `r rmarkdown::metadata$institute`
+### `r format(Sys.time(), "%B %d, %Y")`
+
+---
+class: clear, wolfhead
+.font90[
+.pull-right[<br />
+- Computer science is recognized at .red[**key 21st century skill**]. 
+<br /><br />
+- [.blue[**CSforALL**]](https://www.csforall.org/) aims to make high-quality computer science integral to K-12 students' educational experiences.
+<br /><br />
+- \#CSforAll suggests that .red[**CS educators engage with one another**] on Twitter.]]
+
+
+---
+
+# Guiding Questions
+This social network analysis is guided by the following questions:
+
+1. Are .blue[**\#CSforALL**] educators engaging with each other on Twitter?
+2. Who are the major actors (e.g., transmitters, transceivers, and/or transcenders) in the .blue[**\#CSforALL**] network? 
+3. Are there communities that are formed in the .blue[**\#CSforALL**] network?
+4. What are the sentiments of actors in the .blue[**\#CSforALL**] network?
+
+---
+# Methods
+
+- `rtweet` package was used to pull relevant tweets from Twitter
+ - Hashtags included: .blue[\#CSforAll], .blue[\#CSEd], and .blue[\#CSEducation]
+ - Additionally, .blue[\#KaporCRCS] and .blue[\#CSForGood] because of more recent efforts for culturally-responsive pedagogy
+<br /><br />
+- Packages used for .red[analysis, exploration, and visualization] included:
+ - `tidyverse`, `tidytext`, and `tidygraph`
+ - `igraph` and `ggraph`
+ - `vader`
+---
+class: clear, no-logo, inverse, center, middle
+
+```{r woody-wrangler}
+knitr::include_graphics(path = "https://media.giphy.com/media/RpfIXomvjCh8I/giphy.gif")
+```
+.center[
+.font130[**Let's wrangle some data...**]
+]
+
+---
+
+# Data Wrangling
+
+I used the following code to retrieve relevant tweets, excluding retweets.
+
+.code60[
+```{r retrieve-tweets, echo=TRUE, eval=FALSE}
+get_token()
+
+csed_tweets <- search_tweets(q = "#CSforAll OR #CSEd OR #CSEducation OR #KaporCRCS OR #CSForGood",
+                             n=5000,
+                             lang = "en", 
+                             include_rts = FALSE)
+
+
+csed_tweets_1 <- rtweet::flatten(csed_tweets) 
+
+write_csv(csed_tweets_1, here("Presentation", "data","csed-tweets.csv"))
+```
+]
+
+```{r load-tweets, message=FALSE, warning=FALSE}
+csed_tweets <- read_csv(here("Presentation", "data", "csed-tweets.csv"))
+```
+
+---
+# Sampling of Tweets
+
+.font60[.red[The following sample shows what some of the data looks like.]
+
+```{r tweets-sample, cache=TRUE}
+sample_csed <- sample_n(csed_tweets, 4) |>
+  select(screen_name, text) 
+
+knitr::kable(sample_csed, col.names = c("Screen Name", "Text"), format = "html")
+```
+]
+---
+class: no-logo
+# Extracting Ties and Actors for Network Creation
+.code60[
+.panelset[
+.panel[.panel-name[Ties]
+.pull-left-narrow[<br />.red[First I extracted the ties from the Twitter data.]]
+.pull-right-wide[
+```{r ties, echo=TRUE}
+ties <-  csed_tweets |>
+  relocate(sender = screen_name, # rename screen_name to sender
+           target = mentions_screen_name) |> # rename to receiver
+  select(sender,
+         target,
+         created_at,
+         text) |>
+  unnest_tokens(input = target,
+                output = receiver,
+                to_lower = FALSE) |>
+  relocate(sender, receiver) |>
+  drop_na(receiver)
+```
+]
+]
+.panel[.panel-name[Actors]
+.pull-left-narrow[<br />.red[Then I used the ties to extract the actors.]]
+.pull-right-wide[
+```{r actors, echo=TRUE}
+actors_1 <- ties |>
+  pivot_longer(cols = sender:receiver, 
+               names_to = "nodes",
+               values_to = "screen_name") 
+
+actors <- actors_1 |> 
+  select(screen_name) |>
+  distinct() |>
+  drop_na()
+```
+]
+]
+.panel[.panel-name[Network]
+.pull-left-narrow[<br />.red[The result was a directed network with 195 nodes and 358 edges.]]
+.pull-right-wide[
+```{r network, echo=TRUE, results='markup'}
+network <- tbl_graph(edges = ties, 
+                     nodes = actors)
+network
+```
+]
+]
+]
+]
+---
+class: no-logo
+# Exploring Centrality
+.code60[
+.panelset[
+.panel[.panel-name[Degrees]
+.pull-left-narrow[<br />.red[Next steps were to calculate the node degrees.]]
+.pull-right-wide[
+```{r node-degrees, echo=TRUE, results='hide'}
+network_1 <- network |>
+  activate(nodes) |>
+  mutate(degree = centrality_degree(mode = "all")) |>
+  mutate(in_degree = centrality_degree(mode = "in")) |>
+  mutate(out_degree = centrality_degree(mode = "out"))
+
+network_1
+```
+]
+]
+.panel[.panel-name[Measures]
+.pull-left-narrow[<br />.red[And to get a summary of these measures.]]
+.pull-right-wide[
+```{r remedy02, echo=TRUE}
+node_measures <- network_1 |>  
+  activate(nodes) |>
+  data.frame()
+
+summary(node_measures)
+```
+]
+]
+]
+]
+
+---
+# Transmitters, Transceivers, and Transcenders
+.red[**...oh my!**]
+
+.panelset[
+.panel[.panel-name[Transmitters]
+.pull-left-narrow[.red[Here are the top CS education Tweeters.]]
+.pull-right-wide[
+```{r transmitters}
+transmitters <- node_measures |>  
+  top_n(3, out_degree)
+
+transmitters
+```
+]
+]
+.panel[.panel-name[Transceivers]
+.pull-left-narrow[.red[And the top actors receiving tweets which are all CS education organizations.]]
+.pull-right-wide[
+```{r transceivers}
+transceivers <- node_measures |>  
+  top_n(3, in_degree)
+
+transceivers
+```
+]]
+.panel[.panel-name[Transcenders]
+.pull-left-narrow[.red[Because their in_degree is so high, the top transceivers are the transcenders for this network!]]
+.pull-right-wide[
+```{r transcenders}
+transcenders <- node_measures |>  
+  top_n(3, degree)
+
+transcenders
+```
+]]
+]
+
+---
+class: no-logo
+# Closeness and Betweenness
+
+.red[In preparation for visualizing the network, I added the closeness and betweeness for the nodes.]
+
+```{r closebetween, echo=TRUE, warning=FALSE, results='hide'}
+network_2 <- network_1 |>  
+  activate(nodes) |>  
+  mutate(closeness = centrality_closeness(),
+         betweenness = centrality_betweenness())
+
+network_2
+```
+
+---
+class: no-logo
+# Visualizing the Network
+.center[
+```{r sociogram, fig.height=7, fig.width=11, warning=FALSE}
+ggraph(network_1, layout = "fr") + 
+  geom_node_point(aes(size = in_degree, 
+                      alpha = out_degree, 
+                      colour = degree)) +
+  geom_node_text(aes(label = screen_name, 
+                     size = degree/2,
+                     alpha = degree), 
+                 repel=TRUE) +
+  geom_edge_link(arrow = arrow(length = unit(1, 'mm')), 
+                 end_cap = circle(3, 'mm'),
+                 alpha = .3) + 
+  theme_graph()
+```
+]
+---
+class: no-logo
+# Community Detection
+.code60[
+.panelset[
+.panel[.panel-name[Group Info]
+.pull-left-narrow[.red[Since visualization revealed clear groups, community detection was used for the network.]]
+.pull-right-wide[
+```{r group-info, echo=TRUE, results='hide'}
+network_3 <- network_2 %>%
+  activate(nodes) %>%
+  mutate(group = group_infomap())
+
+network_3
+```
+]]
+.panel[.panel-name[Groups]
+.pull-left-narrow[.red[There turned out to be 29 distinct groups in the network, some of them very small.]]
+.pull-right-wide[
+```{r groups, echo=TRUE}
+groups <- network_3 %>% 
+  activate(nodes) %>%
+  data.frame()
+
+groups$group %>% 
+  sort()
+```
+]]
+.panel[.panel-name[Group Visualization]
+.center[
+```{r group-graph, fig.height=5, fig.width=9, warning=FALSE}
+network_3 %>%
+  ggraph(layout = "kk") + 
+  geom_node_point(aes(size = in_degree, 
+                      colour = group)) +
+  geom_node_text(aes(label = screen_name, 
+                     size = degree/2,
+                     alpha = degree), 
+                 repel=TRUE) +
+  geom_edge_link(arrow = arrow(length = unit(1, 'mm')), 
+                 end_cap = circle(3, 'mm'),
+                 alpha = .3) + 
+  theme_graph()
+```
+]
+]
+]
+]
+
+---
+class: no-logo
+
+# CSforALL Educator Sentiments
+.code60[
+.panelset[
+
+.panel[.panel-name[VADER]
+VADER is the sentiment analysis package I used to process the tweet text.
+.pull-left[
+```{r sentiments, cache=TRUE, echo=TRUE}
+summary_vader <- vader_df(ties$text)
+tweet_sentiment <-inner_join(summary_vader, 
+                             ties,
+                             by = "text")
+
+user_sentiment <- tweet_sentiment %>%
+  group_by(sender) %>%
+  summarise(sentiment = mean(compound))
+```
+]
+.pull-right[
+```{r vader-gif}
+knitr::include_graphics("https://media.giphy.com/media/GIIC4jmmUlXZS/giphy.gif")
+```
+]]
+
+.panel[.panel-name[Positive Tweeters]
+.pull-left-narrow[<br />.red[72 of the tweeters in our \#CSforALL network are tweeting positive things.]]
+.pull-right-wide[
+```{r positive-sents}
+user_positive_sentiment <- tweet_sentiment %>%
+  group_by(sender) %>%
+  summarise(sentiment = mean(compound)) %>% 
+  filter(sentiment > 0) 
+
+user_positive_sentiment
+```
+]]
+
+.panel[.panel-name[Negative Tweeters]
+.pull-left-narrow[<br />.red[**There are none!**]]
+.pull-right-wide[
+```{r negative-sents}
+user_negative_sentiment <- tweet_sentiment %>%
+  group_by(sender) %>%
+  summarise(sentiment = mean(compound)) %>% 
+  filter(sentiment < 0) 
+
+user_negative_sentiment
+```
+]]
+
+.panel[.panel-name[Neutral Tweeters]
+.pull-left-narrow[.red[7 of our actors are posting neutral tweets. <br />Perhaps they are only sharing information or resources?]]
+.pull-right-wide[
+```{r neutrals}
+user_neutral_sentiment <- tweet_sentiment %>%
+  group_by(sender) %>%
+  summarise(sentiment = mean(compound)) %>% 
+  filter(sentiment == 0) 
+
+user_neutral_sentiment
+```
+]
+]]]
+
+---
+class: clear, inverse
+
+## Interpretations and Recommendations
+.font90[
+- There are .red[network of CS educators who are engaging on Twitter].
+- .red[Transmitters are individuals] heavily engaged in \#CSforALL work (e.g., @chrisevans17, @SvetlikCS, and @BTwarek ) but .red[transceivers and transcenders are major organizations] (e.g., @csteachersorg and @Googleorg) receiving tweets.
+ - Perhaps these .warmyellow[**organizations should engage more**] by tweeting at their biggest followers.
+- Many small communities in the \#CSforALL network with a handful of larger ones.
+- .red[Most CS educators] in the \#CSforALL network on Twitter .red[are posting positive things.]
+ - Neutral tweeters may only be posting informative tweets for the network.
+]
+---
+class: clear, middle, inverse
+
+.center[
+**Thank you!**
+
+.font90[If you'd like to learn more about the techniques used in this
+presentation you can get the R project from my
+Github repo:<br />
+<https://github.com/jennhouchins/ECI589-SNA>]
+
+
+.pull-left-narrow[.center[
+<img style="border-radius: 50%;" src="img/jenn.jpg" width="200px"/>]]
+.pull-right-wide[
+<br />
+.font90[
+**Follow me on Twitter:** [@TooSweetGeek](https://twitter.com/TooSweetGeek) <br />
+**Email me:** [jennifer.houchins@ncsu.edu](mailto:jennifer.houchins@ncsu.edu) 
+]
+]]
+
+---
+class: clear
+background-image: url("https://media.giphy.com/media/l0IycQmt79g9XzOWQ/giphy.gif")
+background-size: cover
+

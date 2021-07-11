@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>CSforAll Education Communities on Twitter</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Jennifer Houchins" />
+    <meta name="date" content="2021-07-11" />
+    <script src="libs/header-attrs-2.9/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.6/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.6/panelset.js"></script>
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"<i class=\"fa fa-clipboard\"><\/i>","success":"<i class=\"fa fa-check\" style=\"color: #90BE6D\"><\/i>","error":"Press Ctrl+C to Copy"})</script>
+    <link href="libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+    <link href="libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+    <link href="libs/tile-view-0.2.6/tile-view.css" rel="stylesheet" />
+    <script src="libs/tile-view-0.2.6/tile-view.js"></script>
+    <link rel="stylesheet" href="css/wolfpack.css" type="text/css" />
+    <link rel="stylesheet" href="css/wolfpack-fonts.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: clear, title-slide, inverse, center, top, middle
+
+
+
+
+
+
+
+
+
+
+
+# CSforAll Education Communities on Twitter 
+----
+### **Jennifer Houchins**
+### North Carolina State University
+### July 11, 2021
+
+---
+class: clear, wolfhead
+.font90[
+.pull-right[&lt;br /&gt;
+- Computer science is recognized at .red[**key 21st century skill**]. 
+&lt;br /&gt;&lt;br /&gt;
+- [.blue[**CSforALL**]](https://www.csforall.org/) aims to make high-quality computer science integral to K-12 students' educational experiences.
+&lt;br /&gt;&lt;br /&gt;
+- \#CSforAll suggests that .red[**CS educators engage with one another**] on Twitter.]]
+
+
+---
+
+# Guiding Questions
+This social network analysis is guided by the following questions:
+
+1. Are .blue[**\#CSforALL**] educators engaging with each other on Twitter?
+2. Who are the major actors (e.g., transmitters, transceivers, and/or transcenders) in the .blue[**\#CSforALL**] network? 
+3. Are there communities that are formed in the .blue[**\#CSforALL**] network?
+4. What are the sentiments of actors in the .blue[**\#CSforALL**] network?
+
+---
+# Methods
+
+- `rtweet` package was used to pull relevant tweets from Twitter
+ - Hashtags included: .blue[\#CSforAll], .blue[\#CSEd], and .blue[\#CSEducation]
+ - Additionally, .blue[\#KaporCRCS] and .blue[\#CSForGood] because of more recent efforts for culturally-responsive pedagogy
+&lt;br /&gt;&lt;br /&gt;
+- Packages used for .red[analysis, exploration, and visualization] included:
+ - `tidyverse`, `tidytext`, and `tidygraph`
+ - `igraph` and `ggraph`
+ - `vader`
+---
+class: clear, no-logo, inverse, center, middle
+
+![](https://media.giphy.com/media/RpfIXomvjCh8I/giphy.gif)&lt;!-- --&gt;
+.center[
+.font130[**Let's wrangle some data...**]
+]
+
+---
+
+# Data Wrangling
+
+I used the following code to retrieve relevant tweets, excluding retweets.
+
+.code60[
+
+```r
+get_token()
+
+csed_tweets &lt;- search_tweets(q = "#CSforAll OR #CSEd OR #CSEducation OR #KaporCRCS OR #CSForGood",
+                             n=5000,
+                             lang = "en", 
+                             include_rts = FALSE)
+
+
+csed_tweets_1 &lt;- rtweet::flatten(csed_tweets) 
+
+write_csv(csed_tweets_1, here("Presentation", "data","csed-tweets.csv"))
+```
+]
+
+
+
+---
+# Sampling of Tweets
+
+.font60[.red[The following sample shows what some of the data looks like.]
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Screen Name &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Text &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; coding4kids_ph &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; #Coding4Kids #Coding Kit comes w/ FREE #lessons &amp;amp;amp; activity guides. Grows w/ child. Parts readily available for expansion. Works w/ different platforms &amp;amp;amp; devices.
+
+#girlswhocode #csforall #kids #robotics #bgc #manila #computerscience #raspberrypi #microbit 
+https://t.co/3RoFAsqwhN &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; AVIDOpenAccess &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Attention 6–12 educators: We still have seats available in our summer https://t.co/4mBaAg1gYR workshops in WA, OR, and MT! Apply here today! 
+
+https://t.co/5ZZ4xhCy08
+
+#AVIDxCode #CSForAll #CSForGood #TechWithPurpose https://t.co/GpqQv2o2GO &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; coding4kids_ph &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Best value #Coding #Robot. Durable. No loose parts to manage #LEGO compatible. Prebuilt sensors. No SW to install. Lessons free to DL/use.
+
+https://t.co/NXTNbOVQvg
+
+#csforall #girlswhocode #kids #robotics #microbit #bgc #makati #ai #stem #computerscience &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; YouthCodeJam &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Our 5th birthday celebration was a success! Thank you to everyone who donated, fundraised on our behalf, and shared our social posts! Cheers to 5 years and here's to many many more.
+
+#CSforALL #kidswhocode #codingisfun #txed #girlswhocode https://t.co/VUFpXQfBiw &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+]
+---
+class: no-logo
+# Extracting Ties and Actors for Network Creation
+.code60[
+.panelset[
+.panel[.panel-name[Ties]
+.pull-left-narrow[&lt;br /&gt;.red[First I extracted the ties from the Twitter data.]]
+.pull-right-wide[
+
+```r
+ties &lt;-  csed_tweets |&gt;
+  relocate(sender = screen_name, # rename screen_name to sender
+           target = mentions_screen_name) |&gt; # rename to receiver
+  select(sender,
+         target,
+         created_at,
+         text) |&gt;
+  unnest_tokens(input = target,
+                output = receiver,
+                to_lower = FALSE) |&gt;
+  relocate(sender, receiver) |&gt;
+  drop_na(receiver)
+```
+]
+]
+.panel[.panel-name[Actors]
+.pull-left-narrow[&lt;br /&gt;.red[Then I used the ties to extract the actors.]]
+.pull-right-wide[
+
+```r
+actors_1 &lt;- ties |&gt;
+  pivot_longer(cols = sender:receiver, 
+               names_to = "nodes",
+               values_to = "screen_name") 
+
+actors &lt;- actors_1 |&gt; 
+  select(screen_name) |&gt;
+  distinct() |&gt;
+  drop_na()
+```
+]
+]
+.panel[.panel-name[Network]
+.pull-left-narrow[&lt;br /&gt;.red[The result was a directed network with 195 nodes and 358 edges.]]
+.pull-right-wide[
+
+```r
+network &lt;- tbl_graph(edges = ties, 
+                     nodes = actors)
+network
+```
+
+```
+## # A tbl_graph: 195 nodes and 358 edges
+## #
+## # A directed multigraph with 23 components
+## #
+## # Node Data: 195 x 1 (active)
+##   screen_name    
+##   &lt;chr&gt;          
+## 1 SKolhatkar     
+## 2 microbit_edu   
+## 3 mlmiller       
+## 4 thegrene       
+## 5 MsHexsel       
+## 6 drabigailjoseph
+## # … with 189 more rows
+## #
+## # Edge Data: 358 x 4
+##    from    to created_at          text                                                                                                   
+##   &lt;int&gt; &lt;int&gt; &lt;dttm&gt;              &lt;chr&gt;                                                                                                  
+## 1     1     2 2021-07-10 16:38:03 Had forgotten how exciting it is to meet in person with educators from all over. Folks have come in 45…
+## 2     1     2 2021-07-04 14:56:34 In person @microbit_edu summer PD for Ts organized by #cstasv in #PaloAlto July 10th Registration &amp;amp…
+## 3     1     3 2021-07-04 14:56:34 In person @microbit_edu summer PD for Ts organized by #cstasv in #PaloAlto July 10th Registration &amp;amp…
+## # … with 355 more rows
+```
+]
+]
+]
+]
+---
+class: no-logo
+# Exploring Centrality
+.code60[
+.panelset[
+.panel[.panel-name[Degrees]
+.pull-left-narrow[&lt;br /&gt;.red[Next steps were to calculate the node degrees.]]
+.pull-right-wide[
+
+```r
+network_1 &lt;- network |&gt;
+  activate(nodes) |&gt;
+  mutate(degree = centrality_degree(mode = "all")) |&gt;
+  mutate(in_degree = centrality_degree(mode = "in")) |&gt;
+  mutate(out_degree = centrality_degree(mode = "out"))
+
+network_1
+```
+]
+]
+.panel[.panel-name[Measures]
+.pull-left-narrow[&lt;br /&gt;.red[And to get a summary of these measures.]]
+.pull-right-wide[
+
+```r
+node_measures &lt;- network_1 |&gt;  
+  activate(nodes) |&gt;
+  data.frame()
+
+summary(node_measures)
+```
+
+```
+##  screen_name            degree         in_degree        out_degree    
+##  Length:195         Min.   : 1.000   Min.   : 0.000   Min.   : 0.000  
+##  Class :character   1st Qu.: 1.000   1st Qu.: 0.000   1st Qu.: 0.000  
+##  Mode  :character   Median : 1.000   Median : 1.000   Median : 0.000  
+##                     Mean   : 3.672   Mean   : 1.836   Mean   : 1.836  
+##                     3rd Qu.: 4.500   3rd Qu.: 1.000   3rd Qu.: 3.000  
+##                     Max.   :44.000   Max.   :44.000   Max.   :16.000
+```
+]
+]
+]
+]
+
+---
+# Transmitters, Transceivers, and Transcenders
+.red[**...oh my!**]
+
+.panelset[
+.panel[.panel-name[Transmitters]
+.pull-left-narrow[.red[Here are the top CS education Tweeters.]]
+.pull-right-wide[
+
+```
+##    screen_name degree in_degree out_degree
+## 1 chrisevans17     13         0         13
+## 2    SvetlikCS     17         1         16
+## 3      BTwarek     13         0         13
+```
+]
+]
+.panel[.panel-name[Transceivers]
+.pull-left-narrow[.red[And the top actors receiving tweets which are all CS education organizations.]]
+.pull-right-wide[
+
+```
+##     screen_name degree in_degree out_degree
+## 1 csteachersorg     44        44          0
+## 2     Googleorg     30        30          0
+## 3      CMEGroup     30        30          0
+## 4    MicronTech     30        30          0
+## 5 CMEFoundation     30        30          0
+## 6  AZFoundation     30        30          0
+```
+]]
+.panel[.panel-name[Transcenders]
+.pull-left-narrow[.red[Because their in_degree is so high, the top transceivers are the transcenders for this network!]]
+.pull-right-wide[
+
+```
+##     screen_name degree in_degree out_degree
+## 1 csteachersorg     44        44          0
+## 2     Googleorg     30        30          0
+## 3      CMEGroup     30        30          0
+## 4    MicronTech     30        30          0
+## 5 CMEFoundation     30        30          0
+## 6  AZFoundation     30        30          0
+```
+]]
+]
+
+---
+class: no-logo
+# Closeness and Betweenness
+
+.red[In preparation for visualizing the network, I added the closeness and betweeness for the nodes.]
+
+
+```r
+network_2 &lt;- network_1 |&gt;  
+  activate(nodes) |&gt;  
+  mutate(closeness = centrality_closeness(),
+         betweenness = centrality_betweenness())
+
+network_2
+```
+
+---
+class: no-logo
+# Visualizing the Network
+.center[
+![](IndependentAnalysis_files/figure-html/sociogram-1.png)&lt;!-- --&gt;
+]
+---
+class: no-logo
+# Community Detection
+.code60[
+.panelset[
+.panel[.panel-name[Group Info]
+.pull-left-narrow[.red[Since visualization revealed clear groups, community detection was used for the network.]]
+.pull-right-wide[
+
+```r
+network_3 &lt;- network_2 %&gt;%
+  activate(nodes) %&gt;%
+  mutate(group = group_infomap())
+
+network_3
+```
+]]
+.panel[.panel-name[Groups]
+.pull-left-narrow[.red[There turned out to be 29 distinct groups in the network, some of them very small.]]
+.pull-right-wide[
+
+```r
+groups &lt;- network_3 %&gt;% 
+  activate(nodes) %&gt;%
+  data.frame()
+
+groups$group %&gt;% 
+  sort()
+```
+
+```
+##   [1]  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+##  [45]  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  2  2  2  2  2  2  2  2  2  2  2
+##  [89]  2  2  2  2  2  2  3  3  3  3  3  3  3  3  3  3  3  4  4  4  4  4  4  4  4  5  5  5  5  5  5  5  6  6  6  6  6  6  7  7  7  7  7  7
+## [133]  8  8  8  8  8  9  9  9  9  9 10 10 10 10 11 11 11 11 12 12 12 12 13 13 13 14 14 14 15 15 15 16 16 16 17 17 17 18 18 18 19 19 19 20
+## [177] 20 21 21 22 22 23 23 24 24 25 25 26 26 27 27 28 28 29 29
+```
+]]
+.panel[.panel-name[Group Visualization]
+.center[
+![](IndependentAnalysis_files/figure-html/group-graph-1.png)&lt;!-- --&gt;
+]
+]
+]
+]
+
+---
+class: no-logo
+
+# CSforALL Educator Sentiments
+.code60[
+.panelset[
+
+.panel[.panel-name[VADER]
+VADER is the sentiment analysis package I used to process the tweet text.
+.pull-left[
+
+```r
+summary_vader &lt;- vader_df(ties$text)
+tweet_sentiment &lt;-inner_join(summary_vader, 
+                             ties,
+                             by = "text")
+
+user_sentiment &lt;- tweet_sentiment %&gt;%
+  group_by(sender) %&gt;%
+  summarise(sentiment = mean(compound))
+```
+]
+.pull-right[
+![](https://media.giphy.com/media/GIIC4jmmUlXZS/giphy.gif)&lt;!-- --&gt;
+]]
+
+.panel[.panel-name[Positive Tweeters]
+.pull-left-narrow[&lt;br /&gt;.red[72 of the tweeters in our \#CSforALL network are tweeting positive things.]]
+.pull-right-wide[
+
+```
+## # A tibble: 72 x 2
+##    sender          sentiment
+##    &lt;chr&gt;               &lt;dbl&gt;
+##  1 AFunabiki           0.623
+##  2 AISES               0.895
+##  3 alsgillespie        0.698
+##  4 AmandaMackereth     0.694
+##  5 AmyBakaletz         0.694
+##  6 AndersonTechie      0.694
+##  7 AngCleveland        0.753
+##  8 AnnyAllerton        0.159
+##  9 AnthonyOwenADE      0.648
+## 10 AstraZeno           0.721
+## # … with 62 more rows
+```
+]]
+
+.panel[.panel-name[Negative Tweeters]
+.pull-left-narrow[&lt;br /&gt;.red[**There are none!**]]
+.pull-right-wide[
+
+```
+## # A tibble: 0 x 2
+## # … with 2 variables: sender &lt;chr&gt;, sentiment &lt;dbl&gt;
+```
+]]
+
+.panel[.panel-name[Neutral Tweeters]
+.pull-left-narrow[.red[7 of our actors are posting neutral tweets. &lt;br /&gt;Perhaps they are only sharing information or resources?]]
+.pull-right-wide[
+
+```
+## # A tibble: 7 x 2
+##   sender          sentiment
+##   &lt;chr&gt;               &lt;dbl&gt;
+## 1 cgarside                0
+## 2 CodeMonkeySTU           0
+## 3 grant_hutchison         0
+## 4 HikariKishi             0
+## 5 MichaelSakowicz         0
+## 6 SvetlikCS               0
+## 7 thealohateacher         0
+```
+]
+]]]
+
+---
+class: clear, inverse
+
+## Interpretations and Recommendations
+.font90[
+- There are .red[network of CS educators who are engaging on Twitter].
+- .red[Transmitters are individuals] heavily engaged in \#CSforALL work (e.g., @chrisevans17, @SvetlikCS, and @BTwarek ) but .red[transceivers and transcenders are major organizations] (e.g., @csteachersorg and @Googleorg) receiving tweets.
+ - Perhaps these .warmyellow[**organizations should engage more**] by tweeting at their biggest followers.
+- Many small communities in the \#CSforALL network with a handful of larger ones.
+- .red[Most CS educators] in the \#CSforALL network on Twitter .red[are posting positive things.]
+ - Neutral tweeters may only be posting informative tweets for the network.
+]
+---
+class: clear, middle, inverse
+
+.center[
+**Thank you!**
+
+.font90[If you'd like to learn more about the techniques used in this
+presentation you can get the R project from my
+Github repo:&lt;br /&gt;
+&lt;https://github.com/jennhouchins/ECI589-SNA&gt;]
+
+
+.pull-left-narrow[.center[
+&lt;img style="border-radius: 50%;" src="img/jenn.jpg" width="200px"/&gt;]]
+.pull-right-wide[
+&lt;br /&gt;
+.font90[
+**Follow me on Twitter:** [@TooSweetGeek](https://twitter.com/TooSweetGeek) &lt;br /&gt;
+**Email me:** [jennifer.houchins@ncsu.edu](mailto:jennifer.houchins@ncsu.edu) 
+]
+]]
+
+---
+class: clear
+background-image: url("https://media.giphy.com/media/l0IycQmt79g9XzOWQ/giphy.gif")
+background-size: cover
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "default",
+"highlightLines": true,
+"highlightLanguage": "r",
+"countIncrementalSlides": false,
+"ratio": "16:9",
+"slideNumberFormat": "<div class=\"progress-bar-container\">\n <div class=\"progress-bar\" style=\"width: calc(%current% / %total% * 100%);\">\n </div>\n</div>"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
